@@ -17,4 +17,9 @@ public final class CreateEmitter<T> implements ObservableEmitter<T> {
     public void onNext(T data) {
         observer.onNext(data);
     }
+
+    @Override
+    public void onComplete() {
+        observer.onComplete();
+    }
 }

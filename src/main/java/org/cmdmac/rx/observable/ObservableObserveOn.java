@@ -49,5 +49,15 @@ public class ObservableObserveOn<T> extends AbstractObservable<T> {
             });
         }
 
+        @Override
+        public void onComplete() {
+            schedulers.execute(new Runnable() {
+                @Override
+                public void run() {
+                    observer.onComplete();
+                }
+            });
+        }
+
     }
 }

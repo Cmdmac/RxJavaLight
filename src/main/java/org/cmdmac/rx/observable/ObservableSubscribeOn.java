@@ -42,5 +42,10 @@ public class ObservableSubscribeOn<T> extends AbstractObservable<T> {
         public void onError(Throwable throwable) {
             observer.onError(throwable);
         }
+
+        @Override
+        public void onComplete() {
+            observer.onComplete();
+        }
     }
 }
