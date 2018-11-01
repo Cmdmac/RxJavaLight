@@ -3,20 +3,24 @@ package org.cmdmac.rx.scheduler;
 import android.os.Handler;
 import android.os.Looper;
 
+import org.cmdmac.rx.disposable.Disposable;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 public abstract class Schedulers {
-    abstract public void execute(Runnable runnable);
+    abstract public Disposable execute(Runnable runnable);
 
     static class Main extends Schedulers {
         Handler handler;
         public Main() {
             handler = new Handler(Looper.getMainLooper());
         }
-        public void execute(Runnable runnable) {
-            handler.post(runnable);
+        public Disposable execute(Runnable runnable) {
+            DisposeTask task = new DisposeTask(runnable);
+            handler.post(task);
+            return task;
         }
     }
 
@@ -27,8 +31,10 @@ public abstract class Schedulers {
         }
 
         @Override
-        public void execute(Runnable runnable) {
-            executors.submit(runnable);
+        public Disposable execute(Runnable runnable) {
+            DisposeTask task = new DisposeTask(runnable);
+            executors.submit(task);
+            return task;
         }
     }
 
@@ -40,8 +46,10 @@ public abstract class Schedulers {
         }
 
         @Override
-        public void execute(Runnable runnable) {
-            executors.execute(runnable);
+        public Disposable execute(Runnable runnable) {
+            DisposeTask task = new DisposeTask(runnable);
+            executors.execute(task);
+            return task;
         }
     }
 
@@ -53,8 +61,10 @@ public abstract class Schedulers {
         }
 
         @Override
-        public void execute(Runnable runnable) {
-            executors.execute(runnable);
+        public Disposable execute(Runnable runnable) {
+            DisposeTask task = new DisposeTask(runnable);
+            executors.execute(task);
+            return task;
         }
     }
 
@@ -89,5 +99,30 @@ public abstract class Schedulers {
             sNewThread = new NewThread();
         }
         return sNewThread;
+    }
+
+    static class DisposeTask implements Runnable, Disposable {
+        boolean isDisposed = false;
+        Runnable runnable;
+        DisposeTask(Runnable runnable) {
+            this.runnable = runnable;
+        }
+
+        @Override
+        public void run() {
+            if (!isDisposed()) {
+                this.runnable.run();
+            }
+        }
+
+        @Override
+        public boolean isDisposed() {
+            return isDisposed;
+        }
+
+        @Override
+        public void dispose() {
+            isDisposed = true;
+        }
     }
 }

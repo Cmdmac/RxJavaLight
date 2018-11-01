@@ -1,6 +1,6 @@
 package org.cmdmac.rx.observable;
 
-import org.cmdmac.rx.Action;
+import org.cmdmac.rx.Consumer;
 import org.cmdmac.rx.Observable;
 import org.cmdmac.rx.Observer;
 import org.cmdmac.rx.disposable.Disposable;
@@ -12,26 +12,26 @@ import java.util.concurrent.atomic.AtomicReference;
  * Created by fengzhiping on 2018/9/1.
  */
 
-public class ObservableOnComplete<T> extends AbstractObservable<T> {
-    Action action;
-    public ObservableOnComplete(Observable<T> source, Action onCompleteAction) {
+public class ObservableOnNext<T> extends AbstractObservable<T> {
+    Consumer<T> consumer;
+    public ObservableOnNext(Observable<T> source, Consumer<T> onCompleteAction) {
         super(source);
-        this.action = onCompleteAction;
+        this.consumer = onCompleteAction;
     }
 
     @Override
     public void subscribe(Observer<? super T> observer) {
-        ObserverOnComplete<T> observerOnComplete = new ObserverOnComplete<>(observer, action);
-        source.subscribe(observerOnComplete);
+        ObserverOnNext<T> observerOnNext = new ObserverOnNext<>(observer, consumer);
+        source.subscribe(observerOnNext);
     }
 
-    static class ObserverOnComplete<T> extends AtomicReference<Disposable> implements Observer<T>, Disposable {
+    static class ObserverOnNext<T> extends AtomicReference<Disposable> implements Observer<T> , Disposable {
 
-        Action action;
+        Consumer<T> consumer;
         Observer<? super T> observer;
-        public ObserverOnComplete(Observer<? super T> observer, Action action) {
+        public ObserverOnNext(Observer<? super T> observer, Consumer<T> consumer) {
             this.observer = observer;
-            this.action = action;
+            this.consumer = consumer;
         }
 
         @Override
@@ -43,6 +43,7 @@ public class ObservableOnComplete<T> extends AbstractObservable<T> {
         @Override
         public void onNext(T data) {
             observer.onNext(data);
+            consumer.accept(data);
         }
 
         @Override
@@ -58,8 +59,6 @@ public class ObservableOnComplete<T> extends AbstractObservable<T> {
                 e.printStackTrace();
                 observer.onError(e);
             }
-
-            action.run();
         }
 
         @Override

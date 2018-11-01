@@ -1,9 +1,11 @@
 package org.cmdmac.rx;
 
+import org.cmdmac.rx.disposable.Disposable;
 import org.cmdmac.rx.observable.ObservableCreate;
 import org.cmdmac.rx.observable.ObservableMap;
 import org.cmdmac.rx.observable.ObservableObserveOn;
 import org.cmdmac.rx.observable.ObservableOnComplete;
+import org.cmdmac.rx.observable.ObservableOnNext;
 import org.cmdmac.rx.observable.ObservableOnSubscribe;
 import org.cmdmac.rx.observable.ObservableSubscribeOn;
 import org.cmdmac.rx.observer.LambdaObserver;
@@ -29,21 +31,27 @@ public abstract class Observable<T> {
     }
 
     public abstract void subscribe(Observer<? super T> observer);
-    public void subscribe(Consumer<? super T> onNext) {
-        subscribe(onNext, null);
+    public Disposable subscribe(Consumer<? super T> onNext) {
+        return subscribe(onNext, null);
     }
 
-    public void subscribe(Consumer<? super T> onNext, Consumer<? super Throwable> onError) {
+    public Disposable subscribe(Consumer<? super T> onNext, Consumer<? super Throwable> onError) {
         Observer<T> observer = new LambdaObserver<>(onNext, onError, null);
         subscribe(observer);
+        return (Disposable)observer;
     }
 
-    public void subscribe(Consumer<? super T> onNext, Consumer<? super Throwable> onError, Action action) {
+    public Disposable subscribe(Consumer<? super T> onNext, Consumer<? super Throwable> onError, Action action) {
         Observer<T> observer = new LambdaObserver<>(onNext, onError, action);
         subscribe(observer);
+        return (Disposable)observer;
     }
 
     public Observable<T> doOnComplete(Action action) {
         return new ObservableOnComplete(this, action);
+    }
+
+    public Observable<T> doOnNext(Consumer<T> consumer) {
+        return new ObservableOnNext(this, consumer);
     }
 }

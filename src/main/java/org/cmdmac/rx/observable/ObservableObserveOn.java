@@ -2,6 +2,8 @@ package org.cmdmac.rx.observable;
 
 import org.cmdmac.rx.Observable;
 import org.cmdmac.rx.Observer;
+import org.cmdmac.rx.disposable.Disposable;
+import org.cmdmac.rx.disposable.DisposableHelper;
 import org.cmdmac.rx.scheduler.Schedulers;
 
 /**
@@ -16,16 +18,26 @@ public class ObservableObserveOn<T> extends AbstractObservable<T> {
         this.schedulers = schedulers;
     }
 
+
     @Override
     public void subscribe(Observer<? super T> observer) {
-        ObserverObserveOn<T> observerObserveOn = new ObserverObserveOn<>(observer);
-        source.subscribe(observerObserveOn);
+        ObserveOnObserver<T> observeOnObserver = new ObserveOnObserver<>(observer);
+        source.subscribe(observeOnObserver);
     }
 
-    final class ObserverObserveOn<T> implements Observer<T> {
+    final class ObserveOnObserver<T> implements Observer<T>, Disposable {
         Observer<? super T> observer;
-        public ObserverObserveOn(Observer<? super T> observer) {
+        Disposable s;
+        public ObserveOnObserver(Observer<? super T> observer) {
             this.observer = observer;
+        }
+
+        @Override
+        public void onSubscribe(Disposable d) {
+            if (DisposableHelper.validate(this.s, d)) {
+                this.s = d;
+                observer.onSubscribe(this);
+            }
         }
 
         @Override
@@ -33,7 +45,9 @@ public class ObservableObserveOn<T> extends AbstractObservable<T> {
             schedulers.execute(new Runnable() {
                 @Override
                 public void run() {
-                    observer.onNext(data);
+                    if (!s.isDisposed()) {
+                        observer.onNext(data);
+                    }
                 }
             });
 
@@ -59,5 +73,19 @@ public class ObservableObserveOn<T> extends AbstractObservable<T> {
             });
         }
 
+        @Override
+        public boolean isDisposed() {
+            if (s != null) {
+                return s.isDisposed();
+            }
+            return false;
+        }
+
+        @Override
+        public void dispose() {
+            if (s != null) {
+                s.dispose();
+            }
+        }
     }
 }
